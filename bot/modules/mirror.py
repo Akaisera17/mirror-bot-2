@@ -201,26 +201,26 @@ class MirrorListener:
             if typ != 0:
                 msg += f'\n<b>Corrupted Files: </b>{typ}'
             msg += f'\n<b>Source Msg: </b><a href="https://t.me/c/{chatid}/{download.message.message_id}">Click Here</a>'
-            msg += f'\n<b>Hey </b>{self.tag} <b>Your Job is Done</b>\n<b>Thanks For using @Z_Mirror</b>\n'
+            msg += f'\n<b>Hey </b>{self.tag} <b>Your Job is Done</b>\n<b>Thanks For using @Z_Mirror</b>\n' | <b>ETA:</b> {download.eta()}"
             if not files:
-                sendMessage(msg, self.bot, self.message, download.message.chat.id)
+                sendMessage(msg, self.bot, self.message, chat.id)
             else:
                 fmsg = '\n<b>Your Files Are:</b>\n\n'
                 for index, (link, name) in enumerate(files.items(), start=1):
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
                     if len(fmsg.encode() + msg.encode()) > 4000:
-                        sendMessage(msg + fmsg, self.bot, self.message)
+                        sendMessage(msg + fmsg, self.bot, self.message, chat id)
                         sleep(1)
                         fmsg = ''
                 if fmsg != '':
-                    sendMessage(msg + fmsg, self.bot, self.message, download.message.chat.id)
+                    sendMessage(msg + fmsg, self.bot, self.message, chat.id)
         else:
             msg += f'\n\n<b>Type: </b>{typ}'
             if ospath.isdir(f'{DOWNLOAD_DIR}{self.uid}/{name}'):
                 msg += f'\n<b>SubFolders: </b>{folders}'
                 msg += f'\n<b>Files: </b>{files}'
             msg += f'\n<b>Source Msg: </b><a href="https://t.me/c/{chatid}/{download.message.message_id}">Click Here</a>'
-            msg += f'\n\n<b>Hey </b>{self.tag} <b>Your Job is Done</b>\n<b>Thanks For using @Z_Mirror</b>'
+            msg += f'\n\n<b>Hey </b>{self.tag} <b>Your Job is Done</b>\n<b>Thanks For using @Z_Mirror</b>' | <b>ETA:</b> {download.eta()}"
             buttons = ButtonMaker()
             link = short_url(link)
             buttons.buildbutton("☁️ Drive Link", link)
