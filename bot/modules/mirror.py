@@ -203,7 +203,7 @@ class MirrorListener:
             msg += f'\n<b>Source Msg: </b><a href="https://t.me/c/{chatid}/{download.message.message_id}">Click Here</a>'
             msg += f'\n<b>Hey </b>{self.tag} <b>Your Job is Done</b>\n<b>Thanks For using @Z_Mirror</b>\n'
             if not files:
-                sendMessage(msg, self.bot, self.message)
+                sendMessage(msg, self.bot, self.message, download.message.chat.id)
             else:
                 fmsg = '\n<b>Your Files Are:</b>\n\n'
                 for index, (link, name) in enumerate(files.items(), start=1):
@@ -213,7 +213,7 @@ class MirrorListener:
                         sleep(1)
                         fmsg = ''
                 if fmsg != '':
-                    sendMessage(msg + fmsg, self.bot, self.message)
+                    sendMessage(msg + fmsg, self.bot, self.message, download.message.chat.id)
         else:
             msg += f'\n\n<b>Type: </b>{typ}'
             if ospath.isdir(f'{DOWNLOAD_DIR}{self.uid}/{name}'):
