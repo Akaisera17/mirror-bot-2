@@ -40,6 +40,17 @@ class MirrorStatus:
     STATUS_SPLITTING = "Splitting...✂️"
     STATUS_CHECKING = "CheckingUp...📝"
     STATUS_SEEDING = "Seeding...🌧"
+    
+class EngineStatus:
+    STATUS_ARIA = "Aria2c v1.35.0"
+    STATUS_GD = "Google Api v2.51.0"
+    STATUS_MEGA = "MegaSDK v3.12.0"
+    STATUS_QB = "qBittorrent v4.3.9"
+    STATUS_TG = "Pyrogram v2.0.27"
+    STATUS_YT = "YT-dlp v22.5.18"
+    STATUS_EXT = "Extract | pExtract"
+    STATUS_SPLIT = "FFmpeg v2.9.1"
+    STATUS_ZIP = "p7zip v16.02"
 
 PROGRESS_MAX_SIZE = 100 // 9
 PROGRESS_INCOMPLETE = ['◔', '◔', '◑', '◑', '◑', '◕', '◕']
@@ -136,7 +147,6 @@ def get_readable_message():
                 globals()['COUNT'] -= STATUS_LIMIT
                 globals()['PAGE_NO'] -= 1
         for index, download in enumerate(list(download_dict.values())[COUNT:], start=1):
-            msg += f"<b>Mirroring Under Process</b>\n<b>Please Wait...</b>"
             msg += f"\n\n<b>File Name:</b> <code>{escape(str(download.name()))}</code>"
             msg += f"\n<b>Status:</b> <i>{download.status()}</i>"
             if download.status() not in [
@@ -154,23 +164,17 @@ def get_readable_message():
                     msg += f"\n<b>Downloaded:</b> {get_readable_file_size(download.processed_bytes())} of {download.size()}"
                 msg += f"\n<b>Speed:</b> {download.speed()}\n<b>Waiting Time:</b> {download.eta()}"
                 msg += f"\n<b>Elapsed : </b>{get_readable_time(time() - download.message.date.timestamp())}"
-                msg += f'\n<b>Source :</b> <a href="https://t.me/c/{str(download.message.chat.id)[4:]}/{download.message.message_id}">{download.message.from_user.first_name}</a>'
+                msg += f'\n<b>Req By :</b> <a href="https://t.me/c/{str(download.message.chat.id)[4:]}/{download.message.message_id}">{download.message.from_user.first_name}</a>'
+                msg += f"\n<b>Engine :</b> {download.eng()}"
                 try:
                     msg += f"\n<b>Seeders:</b> {download.aria_download().num_seeders}" \
                            f" | <b>Peers:</b> {download.aria_download().connections}"
-                    msg += f"\n<b>Engine:</b> <code>Aria2c v1.35.0</code>"
                 except:
                     pass
                 try:
                     msg += f"\n<b>Seeders:</b> {download.torrent_info().num_seeds}" \
                            f" | <b>Leechers:</b> {download.torrent_info().num_leechs}"
-                    msg += f"\n<b>Engine:</b> <code>qBittorrent v4.4.2</code>"
                 except:
-                    pass
-                try:
-                    if download.status() == MirrorStatus.STATUS_UPLOADING:
-                        msg += f"\n<b>Engine:</b> <code>Google Api v2.49.0</code>"
-                except BaseException:
                     pass
                 msg += f"\n<b>To Cancel:</b> <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
 
@@ -183,17 +187,11 @@ def get_readable_message():
                 msg += f" | <b>Time: </b>{get_readable_time(download.torrent_info().seeding_time)}"
                 msg += f"\n<b>To Cancel:</b> <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
             else:
-                if download.status() == MirrorStatus.STATUS_ARCHIVING:
-                        # msg += f"\n<b>Elapsed : </b>{get_readable_time(time() - download.message.date.timestamp())}"
-                        msg += f"\n<b>Engine:</b> <code>p7zip v16.02</code>"
-                        msg += f"\n<b>Size: </b>{download.size()}"
-                        msg += "\n\n"
-                else:
-                    msg += f"\n<b>Size: </b>{download.size()}"
-                    msg += "\n\n"
+                msg += f"\n<b>Size: </b>{download.size()}"
+                msg += "\n"
             if STATUS_LIMIT is not None and index == STATUS_LIMIT:
                 break
-        bmsg = f"\n<b>--------------------------------------------</b>"
+        bmsg = f"\n<b>_____________________________________</b>"
         bmsg += f"\n<b>Disk:</b> {get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)}"
         bmsg += f"<b> | UPTM:</b> {get_readable_time(time() - botStartTime)}"
         dlspeed_bytes = 0
