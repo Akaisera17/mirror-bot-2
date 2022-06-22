@@ -10,10 +10,11 @@ from pathlib import PurePath
 from html import escape
 from telegram.ext import CommandHandler
 from telegram import InlineKeyboardMarkup
+
 from bot import Interval, INDEX_URL, BUTTON_FOUR_NAME, BUTTON_FOUR_URL, BUTTON_FIVE_NAME, BUTTON_FIVE_URL, \
-                BUTTON_SIX_NAME, BUTTON_SIX_URL, VIEW_LINK, aria2, QB_SEED, dispatcher, DOWNLOAD_DIR, \
+                BUTTON_SIX_NAME, BUTTON_SIX_URL, VIEW_LINK, SOURCE_LINK, aria2, QB_SEED, dispatcher, DOWNLOAD_DIR, \
                 download_dict, download_dict_lock, TG_SPLIT_SIZE, LOGGER, MEGA_KEY, DB_URI, INCOMPLETE_TASK_NOTIFIER
-from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_gdtot_link, is_mega_link, is_gdrive_link, get_content_type, get_readable_time
+from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_gdtot_link, is_mega_link, is_gdrive_link, get_content_type
 from bot.helper.ext_utils.fs_utils import get_base_name, get_path_size, split_file, clean_download
 from bot.helper.ext_utils.shortenurl import short_url
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException, NotSupportedExtractionArchive
@@ -35,6 +36,7 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, delete_all_messages, update_all_messages
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.db_handler import DbManger
+
 
 class MirrorListener:
     def __init__(self, bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, tag=None):
@@ -106,7 +108,7 @@ class MirrorListener:
                 if ospath.isdir(m_path):
                     for dirpath, subdir, files in walk(m_path, topdown=False):
                         for file_ in files:
-                            if file_.endswith((".zip", ".7z")) or re_search(r'\.part0*1\.rar$|\.7z\.0*1$|\.zip\.0*1$', file_) \
+                            if file_.endswith(".zip") or re_search(r'\.part0*1\.rar$|\.7z\.0*1$|\.zip\.0*1$', file_) \
                                or (file_.endswith(".rar") and not re_search(r'\.part\d+\.rar$', file_)):
                                 m_path = ospath.join(dirpath, file_)
                                 if self.pswd is not None:
@@ -116,7 +118,7 @@ class MirrorListener:
                                 if result.returncode != 0:
                                     LOGGER.error('Unable to extract archive!')
                         for file_ in files:
-                            if file_.endswith((".rar", ".zip", ".7z")) or re_search(r'\.r\d+$|\.7z\.\d+$|\.z\d+$|\.zip\.\d+$', file_):
+                            if file_.endswith((".rar", ".zip")) or re_search(r'\.r\d+$|\.7z\.\d+$|\.z\d+$|\.zip\.\d+$', file_):
                                 del_path = ospath.join(dirpath, file_)
                                 osremove(del_path)
                     path = f'{DOWNLOAD_DIR}{self.uid}/{name}'
@@ -193,18 +195,16 @@ class MirrorListener:
     def onUploadComplete(self, link: str, size, files, folders, typ, name: str):
         if not self.isPrivate and INCOMPLETE_TASK_NOTIFIER and DB_URI is not None:
             DbManger().rm_complete_task(self.message.link)
-        msg = f"<b>File Name: </b><code>{escape(name)}</code>\n<b>File Size: </b>{size}"
+        msg = f"<b>File Name: </b><code>{escape(name)}</code>\n\n<b>Size: </b>{size}"
         if self.isLeech:
             msg += f'\n<b>Total Files: </b>{folders}'
             if typ != 0:
                 msg += f'\n<b>Corrupted Files: </b>{typ}'
-            msg += f'\n\n<b>Hey </b>{self.tag} <b>Your Job is Done</b>'
-            msg += f'\n<b>It Tooks:</b> {get_readable_time(time() - self.message.date.timestamp())}'
-            msg += f'\n\n<b>Thanks For using @Z_Mirror</b>'
+            msg += f'\n<b>Request By </b>{self.tag} <b>Your Job is Done</b>\n<b>Thanks For using @Gayroku_bot</b>\n'
             if not files:
                 sendMessage(msg, self.bot, self.message)
             else:
-                fmsg = '\n<b>Your Files Are:</b>'
+                fmsg = '\n<b>Your Files Are:</b>\n\n'
                 for index, (link, name) in enumerate(files.items(), start=1):
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
                     if len(fmsg.encode() + msg.encode()) > 4000:
@@ -214,13 +214,11 @@ class MirrorListener:
                 if fmsg != '':
                     sendMessage(msg + fmsg, self.bot, self.message)
         else:
-            msg += f'\n<b>Type: </b>{typ}'
+            msg += f'\n\n<b>Type: </b>{typ}'
             if ospath.isdir(f'{DOWNLOAD_DIR}{self.uid}/{name}'):
                 msg += f'\n<b>SubFolders: </b>{folders}'
                 msg += f'\n<b>Files: </b>{files}'
-            msg += f'\n\n<b>Hey </b>{self.tag} <b>Your Job is Done</b>'
-            msg += f'\n<b>It Tooks:</b> {get_readable_time(time() - self.message.date.timestamp())}'
-            msg += f'\n\n<b>Thanks For using @Z_Mirror</b>'
+            msg += f'\n\n<b>Request By </b>{self.tag} <b>Your Job is Done</b>\n<b>Thanks For using @Gayroku_bot</b>'
             buttons = ButtonMaker()
             link = short_url(link)
             buttons.buildbutton("☁️ Drive Link", link)
@@ -285,41 +283,34 @@ class MirrorListener:
 
 def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, multi=0):
     mesg = message.text.split('\n')
-    message_args = mesg[0].split(maxsplit=1)
+    message_args = mesg[0].split(' ', maxsplit=1)
     name_args = mesg[0].split('|', maxsplit=1)
     qbitsel = False
     is_gdtot = False
-    
-    if len(message_args) > 1:
-        link = message_args[1].strip()
+    try:
+        link = message_args[1]
         if link.startswith("s ") or link == "s":
             qbitsel = True
-            message_args = mesg[0].split(maxsplit=2)
-            if len(message_args) > 2:
-                link = message_args[2].strip()
-            else:
-                link = ''
+            message_args = mesg[0].split(' ', maxsplit=2)
+            link = message_args[2].strip()
         elif link.isdigit():
             multi = int(link)
-            link = ''
-        if link.startswith(("|", "pswd:")):
-            link = ''
-    else:
+            raise IndexError
+        if link.startswith(("|", "pswd: ")):
+            raise IndexError
+    except:
         link = ''
-    
-    if len(name_args) > 1:
+    try:
         name = name_args[1]
-        name = name.split(' pswd:')[0]
+        name = name.split(' pswd: ')[0]
         name = name.strip()
-    else:
+    except:
         name = ''
-    
-    link = re_split(r"pswd:|\|", link)[0]
+    link = re_split(r"pswd:| \|", link)[0]
     link = link.strip()
-    
-    pswd_arg = mesg[0].split(' pswd: ')
-    if len(pswd_arg) > 1:
-        pswd = pswd_arg[1]
+    pswdMsg = mesg[0].split(' pswd: ')
+    if len(pswdMsg) > 1:
+        pswd = pswdMsg[1]
 
     if message.from_user.username:
         tag = f"@{message.from_user.username}"
